@@ -1,0 +1,18 @@
+                               
+angelmondragon@Angels-MacBook-Pro servers-go % history                                                               
+ 1032  goose postgres "postgres://angelmondragon:@localhost:5432/chirpy" up
+ 1033  bootdev run ea036a3f-6fa3-446a-ba20-c04cb913e12a
+ 1034  bootdev run ea036a3f-6fa3-446a-ba20-c04cb913e12a -s
+ 1035  go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+ 1036  sqlc version
+ 1037  cd ../
+ 1038  cd ../
+ 1039  touch sqlc.yaml
+ 1040  sqlc generate
+ 1041  go get github.com/google/uuid
+ 1042  go get github.com/lib/pq
+ 1043  go get github.com/joho/godotenv
+ 1044  bootdev run e5bddf3d-d96b-487e-97e6-7a5aa06b1ee1
+ 1045  bootdev run e5bddf3d-d96b-487e-97e6-7a5aa06b1ee1
+ 1046  bootdev run e5bddf3d-d96b-487e-97e6-7a5aa06b1ee1 -s
+ 1047  sqlc generate
