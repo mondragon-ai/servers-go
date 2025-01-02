@@ -1,29 +1,58 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"sync/atomic"
+
+	"mondragon-ai/chirpy/internal/database"
+
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq" // PostgreSQL driver
 )
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
+	db *database.Queries
 }
 
 func main () {
 	fmt.Println("starting go server....")
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	// Get the database URL
+	dbURL := os.Getenv("DB_URL")
+
+	// Open a connection to the database
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer db.Close()
+
+	// Create SQLC database queries
+	dbQueries := database.New(db)
 
 	fileServer := http.FileServer(http.Dir("."))
 
 	apiCfg := apiConfig{
 		fileserverHits: atomic.Int32{},
+		db: dbQueries,
 	}
 
 	mux := http.NewServeMux()
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", fileServer)))
-	mux.HandleFunc("/healthz", handlerReadiness)
-	mux.HandleFunc("/metrics", apiCfg.handleMetrics)
-	mux.HandleFunc("/resets", apiCfg.handleReset)
+	mux.HandleFunc("GET /api/healthz", handlerReadiness)
+	mux.HandleFunc("POST /api/validate_chirp", handlerChirpsValidate)
+
+	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
+	mux.HandleFunc("POST /admin/resets", apiCfg.handleReset)
 	
 	server := &http.Server{
 		Addr: ":8080",
@@ -33,18 +62,4 @@ func main () {
 	if err := server.ListenAndServe(); err != nil {
 		panic(err)
 	}
-}
-
-func (cfg *apiConfig) handleMetrics(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("Hits: %d", cfg.fileserverHits.Load())))
-}
-
-
-func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cfg.fileserverHits.Add(1)
-		next.ServeHTTP(w, r)
-	})
 }
